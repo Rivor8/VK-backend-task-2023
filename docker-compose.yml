@@ -1,0 +1,33 @@
+version: '2'
+
+services:
+    nginx:
+        image: nginx:latest
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./nginx:/etc/nginx/conf.d
+            - ./api:/var/api
+            - ./logs:/var/log/nginx
+        links:
+            - php
+    php:
+        build: ./
+        env_file:
+            - .env
+        links:
+            - db
+        volumes:
+            - ./api:/var/api
+            - /var/api/vendor/
+    db:
+        image: mysql:5.5.60
+        restart: always
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./mysql5:/var/lib/mysql
+        environment:
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
