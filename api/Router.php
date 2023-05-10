@@ -6,37 +6,19 @@ class Router
     {
         if ($uri == "event" and $method == "POST") {
             $requestData = Router::getData($method);
-            if (array_key_exists("name", $requestData) and array_key_exists("auth", $requestData)) {
-                if (is_string($requestData->name) and is_bool($requestData->auth)) {
-                    $event = new Event($requestData->name, $requestData->auth);
-                    if (!$db->addEvent($event))
-                        Router::makeResponseCode(400);
-                    else
-                        Router::makeResponseCode(200, $event);
-                } else
-                    Router::makeResponseCode(400);
-            } else
+            $event = new Event($requestData);
+            if (!$db->addEvent($event))
                 Router::makeResponseCode(400);
+            else
+                Router::makeResponseCode(200, $event);
         } elseif ($uri === "statistics" and $method == "GET") {
             $requestData = Router::getData($method);
-            if (
-                array_key_exists("aggregation", $requestData) and
-                (
-                    array_key_exists("daterange", $requestData) or
-                    array_key_exists("name", $requestData)
-                )
-            ) {
-                // Исправить
-                if (
-                    is_array($requestData->daterange) and
-                    is_array($requestData->name) and
-                    in_array($requestData->aggregation, ["byname", "byuserip", "bystatus"])
-                ) {
-
-                } else
-                    Router::makeResponseCode(400);
-            } else
+            $data = new Statistics($requestData);
+            $stat = $db->getStatistics($data);
+            if ($stat === false)
                 Router::makeResponseCode(400);
+            else
+                echo json_encode($stat);
         } else
             Router::makeResponseCode(404);
     }
@@ -59,7 +41,7 @@ class Router
         }
     }
 
-    private static function makeResponseCode($response, $response_message = null)
+    public static function makeResponseCode($response, $response_message = null)
     {
         switch ($response) {
             case 404:

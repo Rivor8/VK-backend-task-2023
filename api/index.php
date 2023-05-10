@@ -6,6 +6,7 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once("db/Database.php");
 require_once("Router.php");
 require_once("models/Event.php");
+require_once("models/Statistics.php");
 
 
 $db = new Database();

@@ -61,19 +61,60 @@ class Database
             } catch (PDOException $exception) {
                 return false;
             }
-        } else 
+        } else
             return false;
     }
     public function getStatistics($stat)
     {
         if ($this->conn) {
             try {
-                // Тут писать
-                // $filter = "SELECT * FROM events WHERE ";
+                $query = null;
+                switch ($stat->aggregation) {
+                    case "byname":
+                        $agreg = "name_event";
+                        break;
+                    case "byuserip":
+                        $agreg = "user_ip";
+                        break;
+                    case "bystatus":
+                        $agreg = "is_auth";
+                        break;
+                    default:
+                        return false;
+                }
+                $sql = "SELECT count(*) AS count, " . $agreg . " FROM events ";
+                $params = array();
+                if ($stat->daterange != null or $stat->names != null) {
+                    $sql .= "WHERE ";
+                    if ($stat->daterange != null) {
+                        $sql .= "event_date >= ? AND event_date <= ? ";
+                        $params = array_merge($params, [$stat->daterange[0], $stat->daterange[1]]);
+                    }
+                    if ($stat->names != null) {
+                        if ($stat->daterange != null) {
+                            $sql .= "AND ";
+                        }
+                        $sql .= "(name_event = ?";
+                        for ($i = 0; $i < count($stat->names) - 1; $i++) {
+                            $sql .= " OR name_event = ? ";
+                        }
+                        $sql .= ") ";
+                        $params = array_merge($params, $stat->names);
+                    }
+                }
+
+                $sql .= "GROUP BY " . $agreg . ";";
+
+                $query = $this->conn->prepare($sql);
+                if (!$query->execute(array_merge($params))) {
+                    return false;
+                }
+                return $query->fetchAll(PDO::FETCH_ASSOC);
+
             } catch (PDOException $exception) {
                 return false;
             }
-        } else 
+        } else
             return false;
     }
 }
